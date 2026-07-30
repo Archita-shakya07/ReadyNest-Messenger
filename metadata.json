@@ -1,0 +1,11 @@
+{
+  "name": "Ready Nest Messenger",
+  "description": "Secure, responsive real-time messaging platform with User & Admin panels, Desktop view, Gemini AI Assistant, group chats, typing indicators, and moderation.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
