@@ -35,12 +35,12 @@ export function initWebSocketServer(server: Server) {
   };
 
   // Expose for Express routes
-  (global as any).broadcastToAllSockets = broadcastToAll;
-  (global as any).activeWsClientsCount = 0;
+  (globalThis as any).broadcastToAllSockets = broadcastToAll;
+  (globalThis as any).activeWsClientsCount = 0;
 
   // Heartbeat ping interval
   const pingInterval = setInterval(() => {
-    (global as any).activeWsClientsCount = wss.clients.size;
+    (globalThis as any).activeWsClientsCount = wss.clients.size;
     wss.clients.forEach((ws: ExtendedWebSocket) => {
       if (ws.isAlive === false) return ws.terminate();
       ws.isAlive = false;
@@ -133,7 +133,7 @@ export function initWebSocketServer(server: Server) {
 
               // If conversation is with AI Assistant and sender is human, generate AI response
               if ((conv.isAiChat || conv.participantIds.includes('user-ai')) && senderId !== 'user-ai') {
-                // Broadcast AI typing status
+                // Broadcast AI typing status immediately
                 conv.participantIds.forEach(pid => {
                   broadcastToUser(pid, {
                     event: 'message:typing',
@@ -141,36 +141,45 @@ export function initWebSocketServer(server: Server) {
                   });
                 });
 
-                // Generate response asynchronously
+                // Generate response asynchronously with sub-50ms kickoff
                 setTimeout(async () => {
                   let replyText = '';
                   const aiClient = getAiClient();
+                  const systemInstruction = `You are 'ReadyNest AI Assistant', an intelligent, helpful, and friendly AI chatbot integrated inside the Ready Nest Messenger platform built by Archit Shakya.
+Always provide complete, thorough, and direct answers to user questions. Never output placeholder or generic non-answers.
+When asked for questions, code, study topics, summaries, or explanations, provide them in full detail formatted cleanly with markdown, emojis, code blocks, and clear lists.`;
+
                   if (aiClient) {
                     try {
                       const response = await aiClient.models.generateContent({
                         model: 'gemini-3.6-flash',
                         contents: content || 'Hello AI',
-                        config: {
-                          systemInstruction: `You are 'ReadyNest AI Assistant', an intelligent, helpful, and friendly AI chatbot integrated inside Ready Nest Messenger platform built by Archit Shakya. 
-Answer concisely, concisely formatted with markdown, emojis, code snippets where applicable, and maintain a warm, professional tone. 
-Keep answers readable for chat screens.`,
-                        },
+                        config: { systemInstruction },
                       });
-                      replyText = response.text || generateSmartAiReply(content || '');
-                    } catch (genErr: any) {
-                      console.warn('WebSocket Gemini generateContent failed, using smart fallback:', genErr?.message || genErr);
-                      replyText = generateSmartAiReply(content || '');
+                      replyText = response.text || '';
+                    } catch (genErr1: any) {
+                      console.warn('Gemini 3.6 Flash call failed in WebSocket, trying gemini-flash-latest:', genErr1?.message || genErr1);
+                      try {
+                        const response2 = await aiClient.models.generateContent({
+                          model: 'gemini-flash-latest',
+                          contents: content || 'Hello AI',
+                          config: { systemInstruction },
+                        });
+                        replyText = response2.text || '';
+                      } catch (genErr2: any) {
+                        console.warn('Gemini fallback failed in WebSocket:', genErr2?.message || genErr2);
+                      }
                     }
-                  } else {
+                  }
+
+                  if (!replyText || replyText.trim().length === 0) {
                     replyText = generateSmartAiReply(content || '');
                   }
 
                   // Stop typing
-                  conv.participantIds.forEach(pid => {
-                    broadcastToUser(pid, {
-                      event: 'message:typing',
-                      payload: { conversationId, userId: 'user-ai', isTyping: false }
-                    });
+                  broadcastToAll({
+                    event: 'message:typing',
+                    payload: { conversationId, userId: 'user-ai', isTyping: false }
                   });
 
                   // Add AI message to DB
@@ -189,14 +198,12 @@ Keep answers readable for chat screens.`,
                   };
                   db.addMessage(aiMsg);
 
-                  // Broadcast AI message
-                  conv.participantIds.forEach(pid => {
-                    broadcastToUser(pid, {
-                      event: 'message:new',
-                      payload: { message: aiMsg, conversationId }
-                    });
+                  // Broadcast AI message instantly to all connected clients
+                  broadcastToAll({
+                    event: 'message:new',
+                    payload: { message: aiMsg, conversationId }
                   });
-                }, 600);
+                }, 10);
               }
             }
             break;

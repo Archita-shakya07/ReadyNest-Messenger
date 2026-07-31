@@ -53,6 +53,7 @@ interface AppState {
   filterTab: 'all' | 'unread' | 'groups' | 'ai';
   setFilterTab: (tab: 'all' | 'unread' | 'groups' | 'ai') => void;
   setActiveConversation: (id: string | null) => Promise<void>;
+  openAiChat: () => Promise<void>;
   loadConversations: () => Promise<void>;
   sendMessage: (content: string, type?: string, attachments?: Attachment[], replyToId?: string) => Promise<void>;
   addReaction: (messageId: string, emoji: string) => Promise<void>;
@@ -66,6 +67,8 @@ interface AppState {
   setPreviewMedia: (media: Attachment | null) => void;
   isNewGroupModalOpen: boolean;
   setNewGroupModalOpen: (open: boolean) => void;
+  isNewChatModalOpen: boolean;
+  setNewChatModalOpen: (open: boolean) => void;
 
   // Broadcasts
   broadcasts: SystemBroadcast[];
@@ -86,7 +89,13 @@ export const useStore = create<AppState>((set, get) => ({
   setAuthModalOpen: (open) => set({ isAuthModalOpen: open, authPageMode: open ? 'signin' : 'landing' }),
 
   setCurrentUser: (user, token) => {
-    set({ currentUser: user, token: token || get().token, isAuthModalOpen: false, authPageMode: 'landing' });
+    set({
+      currentUser: user,
+      token: token || get().token,
+      isAuthModalOpen: false,
+      authPageMode: 'landing',
+      viewMode: user?.role === 'admin' ? 'admin' : 'chat'
+    });
     if (user) {
       localStorage.setItem('readynest_user', JSON.stringify(user));
       if (token) localStorage.setItem('readynest_token', token);
@@ -139,84 +148,7 @@ export const useStore = create<AppState>((set, get) => ({
   setInfoDrawerOpen: (open) => set({ isInfoDrawerOpen: open }),
 
   // Call Logs & Status Stories State
-  callLogs: [
-    {
-      id: 'call-1',
-      user: {
-        id: 'user-aanya',
-        name: 'Aanya Sharma',
-        email: 'aanya@readynest.com',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        role: 'user',
-        statusMessage: '✨ ReadyNest Mobile App Dev',
-        status: 'online',
-        isBlocked: false,
-        lastSeen: new Date().toISOString(),
-        createdAt: new Date().toISOString()
-      },
-      type: 'video',
-      direction: 'incoming',
-      duration: '14m 20s',
-      timestamp: 'Today, 10:15 AM'
-    },
-    {
-      id: 'call-2',
-      user: {
-        id: 'user-rohan',
-        name: 'Rohan Mehta',
-        email: 'rohan@readynest.com',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-        role: 'user',
-        statusMessage: '💻 Backend & WebSockets Lead',
-        status: 'online',
-        isBlocked: false,
-        lastSeen: new Date().toISOString(),
-        createdAt: new Date().toISOString()
-      },
-      type: 'voice',
-      direction: 'outgoing',
-      duration: '03m 45s',
-      timestamp: 'Today, 09:30 AM'
-    },
-    {
-      id: 'call-3',
-      user: {
-        id: 'user-priya',
-        name: 'Priya Patel',
-        email: 'priya@readynest.com',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-        role: 'user',
-        statusMessage: '🎨 Product Design & UI/UX',
-        status: 'away',
-        isBlocked: false,
-        lastSeen: new Date().toISOString(),
-        createdAt: new Date().toISOString()
-      },
-      type: 'video',
-      direction: 'missed',
-      duration: 'Missed Call',
-      timestamp: 'Yesterday, 06:40 PM'
-    },
-    {
-      id: 'call-4',
-      user: {
-        id: 'user-aanya',
-        name: 'Aanya Sharma',
-        email: 'aanya@readynest.com',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        role: 'user',
-        statusMessage: '✨ ReadyNest Mobile App Dev',
-        status: 'online',
-        isBlocked: false,
-        lastSeen: new Date().toISOString(),
-        createdAt: new Date().toISOString()
-      },
-      type: 'voice',
-      direction: 'incoming',
-      duration: '08m 12s',
-      timestamp: 'Yesterday, 02:15 PM'
-    }
-  ],
+  callLogs: [],
 
   addCallLog: (log) => {
     const newLog: CallLog = {
@@ -229,66 +161,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   clearCallLogs: () => set({ callLogs: [] }),
 
-  statusStories: [
-    {
-      id: 'story-aanya',
-      userId: 'user-aanya',
-      userName: 'Aanya Sharma',
-      userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      updatedAt: '12 minutes ago',
-      hasUnseen: true,
-      stories: [
-        {
-          id: 'st-aanya-1',
-          type: 'text',
-          caption: '🚀 ReadyNest Messenger v2.5 update is live! Check out real-time audio and status stories!',
-          bgGradient: 'from-emerald-600 via-teal-700 to-slate-900',
-          createdAt: '12m ago'
-        },
-        {
-          id: 'st-aanya-2',
-          type: 'image',
-          mediaUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop&q=80',
-          caption: 'Team sprint sync at HQ! ☕💻',
-          createdAt: '10m ago'
-        }
-      ]
-    },
-    {
-      id: 'story-rohan',
-      userId: 'user-rohan',
-      userName: 'Rohan Mehta',
-      userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      updatedAt: '45 minutes ago',
-      hasUnseen: true,
-      stories: [
-        {
-          id: 'st-rohan-1',
-          type: 'image',
-          mediaUrl: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80',
-          caption: 'Building sub-10ms latency WebSocket pipelines! ⚡',
-          createdAt: '45m ago'
-        }
-      ]
-    },
-    {
-      id: 'story-priya',
-      userId: 'user-priya',
-      userName: 'Priya Patel',
-      userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-      updatedAt: '2 hours ago',
-      hasUnseen: false,
-      stories: [
-        {
-          id: 'st-priya-1',
-          type: 'text',
-          caption: '🎨 Designing the dark mode color palette for ReadyNest UI',
-          bgGradient: 'from-purple-600 via-indigo-700 to-slate-950',
-          createdAt: '2h ago'
-        }
-      ]
-    }
-  ],
+  statusStories: [],
 
   myStories: [],
 
@@ -389,14 +262,80 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
+  openAiChat: async () => {
+    const { currentUser } = get();
+    if (!currentUser) return;
+
+    set({ viewMode: 'chat', filterTab: 'all' });
+
+    let convs = get().conversations;
+    let aiConv = convs.find((c) => c.isAiChat || c.participantIds.includes('user-ai'));
+
+    if (!aiConv) {
+      try {
+        const res = await api.createConversation({
+          isGroup: false,
+          participantIds: [currentUser.id, 'user-ai'],
+          createdBy: currentUser.id
+        });
+        if (res.conversation) {
+          aiConv = res.conversation;
+        }
+        await get().loadConversations();
+        convs = get().conversations;
+        aiConv = convs.find((c) => c.isAiChat || c.participantIds.includes('user-ai')) || aiConv;
+      } catch (e) {
+        console.error('Error creating/finding AI conversation:', e);
+      }
+    }
+
+    if (aiConv) {
+      await get().setActiveConversation(aiConv.id);
+    }
+  },
+
   sendMessage: async (content, type = 'text', attachments, replyToId) => {
     const { currentUser, activeConversationId } = get();
     if (!currentUser || !activeConversationId) return;
 
-    // Send over WebSocket for sub-100ms speed
-    socketService.sendMessage(activeConversationId, currentUser.id, content, type, attachments, replyToId);
+    const tempMessage: Message = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      conversationId: activeConversationId,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      senderAvatar: currentUser.avatar,
+      content: content || '',
+      type: (type as any) || 'text',
+      status: 'sent',
+      attachments,
+      replyToId,
+      createdAt: new Date().toISOString()
+    };
 
-    // If sending in AI conversation, also invoke AI Assistant API if socket is offline
+    // Optimistically update local state immediately so message appears instantly
+    set((s) => ({
+      messages: [...s.messages.filter(m => m.id !== tempMessage.id), tempMessage]
+    }));
+
+    // Send over WebSocket for real-time delivery if connected, otherwise fallback to REST
+    if (socketService.getIsConnected()) {
+      socketService.sendMessage(activeConversationId, currentUser.id, content, type, attachments, replyToId);
+    } else {
+      try {
+        await api.sendMessage({
+          conversationId: activeConversationId,
+          senderId: currentUser.id,
+          content,
+          type,
+          attachments,
+          replyToId
+        });
+      } catch (e) {
+        console.warn('REST sendMessage error:', e);
+      }
+    }
+
+    // If sending in AI conversation and socket is offline, also invoke AI Assistant API
     const activeConv = get().conversations.find(c => c.id === activeConversationId);
     if (activeConv && (activeConv.isAiChat || activeConv.participantIds.includes('user-ai'))) {
       if (!socketService.getIsConnected()) {
@@ -414,6 +353,8 @@ export const useStore = create<AppState>((set, get) => ({
         }
       }
     }
+
+    get().loadConversations();
   },
 
   addReaction: async (messageId, emoji) => {
@@ -431,6 +372,8 @@ export const useStore = create<AppState>((set, get) => ({
   setPreviewMedia: (media) => set({ previewMedia: media }),
   isNewGroupModalOpen: false,
   setNewGroupModalOpen: (open) => set({ isNewGroupModalOpen: open }),
+  isNewChatModalOpen: false,
+  setNewChatModalOpen: (open) => set({ isNewChatModalOpen: open }),
 
   // Broadcasts
   broadcasts: [],
@@ -462,6 +405,19 @@ export const useStore = create<AppState>((set, get) => ({
                 return {
                   messages: s.messages.map((m) => (m.id === message.id ? message : m)),
                 };
+              }
+              // Replace optimistic temp message if found
+              const tempIndex = s.messages.findIndex(
+                (m) =>
+                  m.id.startsWith('msg-') &&
+                  m.senderId === message.senderId &&
+                  m.content === message.content &&
+                  m.id !== message.id
+              );
+              if (tempIndex !== -1) {
+                const updated = [...s.messages];
+                updated[tempIndex] = message;
+                return { messages: updated };
               }
               return { messages: [...s.messages, message] };
             });

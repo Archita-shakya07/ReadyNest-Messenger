@@ -10,7 +10,8 @@ import {
   Check,
   CheckCheck,
   Sparkles,
-  Filter
+  Filter,
+  UserPlus
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -26,7 +27,8 @@ export const Sidebar: React.FC = () => {
     typingUsers,
     theme,
     isDarkMode,
-    setNewGroupModalOpen
+    setNewGroupModalOpen,
+    setNewChatModalOpen
   } = useStore();
 
   const currentThemeConfig = THEMES[theme] || THEMES.cloud;
@@ -45,7 +47,7 @@ export const Sidebar: React.FC = () => {
       return unread > 0;
     }
     if (filterTab === 'groups') return conv.isGroup;
-    if (filterTab === 'ai') return conv.isAiChat;
+    if (filterTab === 'ai') return conv.isAiChat || conv.participantIds.includes('user-ai');
 
     return true;
   });
@@ -72,17 +74,32 @@ export const Sidebar: React.FC = () => {
             />
             Messages
           </h2>
-          <button
-            onClick={() => setNewGroupModalOpen(true)}
-            style={{
-              borderColor: `${currentThemeConfig.primary}40`,
-              color: currentThemeConfig.primary,
-            }}
-            className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 border rounded-xl text-xs font-semibold transition-all flex items-center gap-1"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            New Group
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setNewChatModalOpen(true)}
+              style={{
+                backgroundColor: `${currentThemeConfig.primary}15`,
+                color: currentThemeConfig.primary,
+                borderColor: `${currentThemeConfig.primary}30`
+              }}
+              className="px-2.5 py-1.5 border rounded-xl text-xs font-semibold transition-all flex items-center gap-1 hover:opacity-90"
+              title="Start a new 1-on-1 chat with registered users"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Chat</span>
+            </button>
+            <button
+              onClick={() => setNewGroupModalOpen(true)}
+              style={{
+                borderColor: `${currentThemeConfig.primary}40`,
+                color: currentThemeConfig.primary,
+              }}
+              className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 border rounded-xl text-xs font-semibold transition-all flex items-center gap-1"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Group</span>
+            </button>
+          </div>
         </div>
 
         {/* Search Input Bar */}

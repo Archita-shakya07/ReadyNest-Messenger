@@ -29,6 +29,7 @@ export const AuthPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [agreeTerms, setAgreeTerms] = useState(true);
+  const [selectedRole, setSelectedRole] = useState<'user' | 'admin'>('user');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -65,7 +66,8 @@ export const AuthPage: React.FC = () => {
       const res = await api.signup({
         name: name || 'New User',
         email: email || `user_${Date.now()}@readynest.com`,
-        statusMessage: 'Available for professional chat',
+        role: selectedRole,
+        statusMessage: selectedRole === 'admin' ? '👑 Workspace Administrator' : 'Available for professional chat',
       });
       setCurrentUser(res.user, res.token);
     } catch (err: any) {
@@ -221,22 +223,60 @@ export const AuthPage: React.FC = () => {
             {/* Auth Form */}
             <form onSubmit={isSignup ? handleSignup : handleLogin} className="space-y-4">
               {isSignup && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="John Doe"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-600 focus:outline-none transition-all"
-                    />
+                <>
+                  {/* Role Choice */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Select Account Type
+                    </label>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRole('user')}
+                        className={`p-3 rounded-2xl border flex flex-col items-center justify-center text-center gap-1 transition-all cursor-pointer ${
+                          selectedRole === 'user'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20 font-bold'
+                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                        }`}
+                      >
+                        <UserIcon className="w-5 h-5 text-emerald-600" />
+                        <span className="text-xs">User Account</span>
+                        <span className="text-[10px] opacity-75">Chat & Media</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRole('admin')}
+                        className={`p-3 rounded-2xl border flex flex-col items-center justify-center text-center gap-1 transition-all cursor-pointer ${
+                          selectedRole === 'admin'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20 font-bold'
+                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                        }`}
+                      >
+                        <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                        <span className="text-xs">Admin Account</span>
+                        <span className="text-[10px] opacity-75">Admin Dashboard</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        required
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="John Doe"
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-600 focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+                </>
               )}
 
               <div>
@@ -319,7 +359,7 @@ export const AuthPage: React.FC = () => {
                     className="w-4 h-4 rounded text-emerald-700 focus:ring-emerald-600 border-slate-300 cursor-pointer"
                   />
                   <label htmlFor="rememberMe" className="text-xs text-slate-600 dark:text-slate-400 font-medium cursor-pointer">
-                    Stay logged in for 30 days
+                    I agree to the Terms of Service and Privacy Policy.
                   </label>
                 </div>
               ) : (
@@ -358,7 +398,6 @@ export const AuthPage: React.FC = () => {
                 )}
               </button>
             </form>
-
             {/* Bottom Toggle Link */}
             <div className="mt-6 text-center text-xs text-slate-600 dark:text-slate-400 font-medium">
               {isSignup ? (

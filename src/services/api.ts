@@ -15,7 +15,7 @@ export const api = {
     return res.json();
   },
 
-  signup: async (data: { name: string; email: string; avatar?: string; statusMessage?: string }) => {
+  signup: async (data: { name: string; email: string; avatar?: string; statusMessage?: string; role?: 'user' | 'admin' }) => {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -16,6 +16,8 @@ import { SpecsRoadmapModal } from './components/specs/SpecsRoadmapModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { AuthPage } from './components/auth/AuthPage';
 import { GroupModal } from './components/chat/GroupModal';
+import { NewChatModal } from './components/chat/NewChatModal';
+import { MobileBottomNav } from './components/navigation/MobileBottomNav';
 import { VoiceVideoCallModal } from './components/chat/VoiceVideoCallModal';
 import { SystemBroadcastBanner } from './components/ui/SystemBroadcastBanner';
 import { MediaPreviewModal } from './components/ui/MediaPreviewModal';
@@ -117,9 +119,13 @@ export default function App() {
         {viewMode === 'specs' && <SpecsRoadmapModal />}
       </main>
 
+      {/* WhatsApp Style Mobile Bottom Bar */}
+      <MobileBottomNav />
+
       {/* Global Modals */}
       <AuthModal />
       <GroupModal />
+      <NewChatModal />
       <VoiceVideoCallModal />
       <StoryViewerModal />
       <MediaPreviewModal />

@@ -42,7 +42,7 @@ authRouter.post('/login', (req, res) => {
 
 // POST /api/auth/signup
 authRouter.post('/signup', (req, res) => {
-  const { name, email, avatar, statusMessage } = req.body;
+  const { name, email, avatar, statusMessage, role } = req.body;
 
   if (!name || !email) {
     return res.status(400).json({ error: 'Name and email are required' });
@@ -53,13 +53,15 @@ authRouter.post('/signup', (req, res) => {
     return res.status(400).json({ error: 'User with this email already exists' });
   }
 
+  const userRole = role === 'admin' ? 'admin' : 'user';
+
   const newUser: User = {
     id: `user-${Date.now()}`,
     name,
     email,
     avatar: avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
-    role: 'user',
-    statusMessage: statusMessage || 'Hey there! I am using Ready Nest Messenger.',
+    role: userRole,
+    statusMessage: statusMessage || (userRole === 'admin' ? '👑 Workspace Administrator' : 'Available for professional chat'),
     status: 'online',
     isBlocked: false,
     lastSeen: new Date().toISOString(),
@@ -83,9 +85,17 @@ authRouter.post('/signup', (req, res) => {
       isAiChat: true
     });
   }
-
   const token = generateToken(newUser.id);
-  return res.status(201).json({ token, user: newUser });
+
+// Broadcast new user to all connected clients
+if (typeof (global as any).broadcastToAllSockets === 'function') {
+  (global as any).broadcastToAllSockets({
+    event: 'user:new',
+    payload: { user: newUser }
+  });
+}
+
+return res.status(201).json({ token, user: newUser });
 });
 
 // GET /api/auth/me

@@ -16,24 +16,34 @@ aiRouter.post('/chat', async (req, res) => {
 
     const aiClient = getAiClient();
     let replyText = '';
+    const systemInstruction = `You are 'ReadyNest AI Assistant', an intelligent, helpful, and friendly AI chatbot integrated inside the Ready Nest Messenger platform built by Archit Shakya.
+Always provide complete, thorough, and direct answers to user questions. Never output placeholder or generic non-answers.
+When asked for questions, code, study topics, summaries, or explanations, provide them in full detail formatted cleanly with markdown, emojis, code blocks, and clear lists.`;
 
     if (aiClient) {
       try {
         const response = await aiClient.models.generateContent({
-          model: 'gemini-3.6-flash',
+          model: 'gemini-2.5-flash',
           contents: prompt,
-          config: {
-            systemInstruction: `You are 'ReadyNest AI Assistant', an intelligent, helpful, and friendly AI chatbot integrated inside Ready Nest Messenger platform built by Archit Shakya. 
-Answer concisely, concisely formatted with markdown, emojis, code snippets where applicable, and maintain a warm, professional tone. 
-Keep answers readable for chat screens.`,
-          },
+          config: { systemInstruction },
         });
-        replyText = response.text || generateSmartAiReply(prompt);
-      } catch (genErr: any) {
-        console.warn('Gemini generateContent call failed, using smart fallback:', genErr?.message || genErr);
-        replyText = generateSmartAiReply(prompt);
+        replyText = response.text || '';
+      } catch (genErr1: any) {
+        console.warn('Gemini 2.5 Flash call failed in REST route, trying gemini-2.5-pro:', genErr1?.message || genErr1);
+        try {
+          const response2 = await aiClient.models.generateContent({
+            model: 'gemini-2.5-pro',
+            contents: prompt,
+            config: { systemInstruction },
+          });
+          replyText = response2.text || '';
+        } catch (genErr2: any) {
+          console.warn('Gemini fallback failed in REST route:', genErr2?.message || genErr2);
+        }
       }
-    } else {
+    }
+
+    if (!replyText || replyText.trim().length === 0) {
       replyText = generateSmartAiReply(prompt);
     }
 

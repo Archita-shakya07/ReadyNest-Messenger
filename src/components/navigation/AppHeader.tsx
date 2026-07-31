@@ -81,62 +81,6 @@ export const AppHeader: React.FC = () => {
           Online
         </span>
       </div>
-
-      {/* Mobile Navigation Bar */}
-      <div className="flex md:hidden items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
-        <button
-          onClick={() => setViewMode('chat')}
-          style={viewMode === 'chat' ? { backgroundColor: currentThemeConfig.primary } : undefined}
-          className={`p-1.5 rounded-lg text-xs font-semibold transition-all ${
-            viewMode === 'chat'
-              ? 'text-white shadow-sm'
-              : 'text-slate-600 dark:text-slate-400'
-          }`}
-          title="Chats"
-        >
-          <MessageSquare className="w-4 h-4" />
-        </button>
-
-        <button
-          onClick={() => setViewMode('calls')}
-          style={viewMode === 'calls' ? { backgroundColor: currentThemeConfig.primary } : undefined}
-          className={`p-1.5 rounded-lg text-xs font-semibold transition-all ${
-            viewMode === 'calls'
-              ? 'text-white shadow-sm'
-              : 'text-slate-600 dark:text-slate-400'
-          }`}
-          title="Calls Log"
-        >
-          <PhoneCall className="w-4 h-4" />
-        </button>
-
-        <button
-          onClick={() => setViewMode('status')}
-          style={viewMode === 'status' ? { backgroundColor: currentThemeConfig.primary } : undefined}
-          className={`p-1.5 rounded-lg text-xs font-semibold transition-all ${
-            viewMode === 'status'
-              ? 'text-white shadow-sm'
-              : 'text-slate-600 dark:text-slate-400'
-          }`}
-          title="Status & Updates"
-        >
-          <CircleDashed className="w-4 h-4" />
-        </button>
-
-        <button
-          onClick={() => setViewMode('settings')}
-          style={viewMode === 'settings' ? { backgroundColor: currentThemeConfig.primary } : undefined}
-          className={`p-1.5 rounded-lg text-xs font-semibold transition-all ${
-            viewMode === 'settings'
-              ? 'text-white shadow-sm'
-              : 'text-slate-600 dark:text-slate-400'
-          }`}
-          title="Settings & Profile"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
-      </div>
-
       {/* Right Actions & Working Notifications & User Profile */}
       <div className="flex items-center gap-2 relative">
         {/* Create Group Quick Button */}

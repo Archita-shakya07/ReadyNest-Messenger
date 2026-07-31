@@ -14,8 +14,6 @@ import {
   CheckCircle2,
   Lock,
   Globe,
-  Sun,
-  Moon,
   Layers,
   Smile,
   CheckCheck,
@@ -24,7 +22,7 @@ import {
 import { motion } from 'motion/react';
 
 export const LandingPage: React.FC = () => {
-  const { setAuthPageMode, isDarkMode, toggleDarkMode } = useStore();
+  const { setAuthPageMode } = useStore();
 
   return (
     <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans transition-colors duration-300">
@@ -48,15 +46,6 @@ export const LandingPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Dark / Light Toggle */}
-          <button
-            onClick={toggleDarkMode}
-            className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-            title="Toggle theme mode"
-          >
-            {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-emerald-700" />}
-          </button>
-
           {/* Login & Register Buttons */}
           <button
             onClick={() => setAuthPageMode('signin')}

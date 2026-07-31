@@ -26,7 +26,10 @@ import {
   CheckCircle,
   X,
   Send,
-  Plus
+  Plus,
+  Camera,
+  Upload,
+  Image
 } from 'lucide-react';
 
 interface LogEntry {
@@ -92,6 +95,42 @@ export const SettingsPanel: React.FC = () => {
   ]);
 
   const currentThemeConfig = THEMES[theme] || THEMES.cloud;
+
+  const PRESET_AVATARS = [
+    { id: '1', name: 'Aanya', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80' },
+    { id: '2', name: 'Rohan', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80' },
+    { id: '3', name: 'Priya', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80' },
+    { id: '4', name: 'Alex', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80' },
+    { id: '5', name: 'Vector 3D', url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'user')}` },
+    { id: '6', name: 'Bot/Cyber', url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name || 'bot')}` }
+  ];
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 8 * 1024 * 1024) {
+        alert("Image size should be under 8MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setAvatar(result);
+        if (currentUser) {
+          setCurrentUser({ ...currentUser, avatar: result });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    const defaultAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'user')}`;
+    setAvatar(defaultAvatar);
+    if (currentUser) {
+      setCurrentUser({ ...currentUser, avatar: defaultAvatar });
+    }
+  };
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,17 +230,21 @@ export const SettingsPanel: React.FC = () => {
           {/* "What's happening?" Story Avatar Ring */}
           <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-2">
             <div className="flex items-center gap-3">
-              <div className="relative">
+              <div
+                className="relative cursor-pointer group"
+                onClick={() => setActiveTab('profile')}
+                title="Click to edit profile photo"
+              >
                 <img
                   src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
                   alt={currentUser?.name}
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-emerald-500 p-0.5"
+                  className="w-12 h-12 rounded-full object-cover ring-2 ring-emerald-500 p-0.5 group-hover:opacity-80 transition-opacity"
                 />
                 <div
                   style={{ backgroundColor: currentThemeConfig.primary }}
-                  className="absolute bottom-0 right-0 p-0.5 text-white rounded-full shadow-xs"
+                  className="absolute bottom-0 right-0 p-1 text-white rounded-full shadow-xs"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Camera className="w-3 h-3" />
                 </div>
               </div>
               <div className="flex-1 min-w-0">
@@ -292,20 +335,110 @@ export const SettingsPanel: React.FC = () => {
               </div>
 
               <form onSubmit={handleSaveProfile} className="space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-                  <img
-                    src={avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-                    alt="Avatar Preview"
-                    className="w-16 h-16 rounded-full object-cover ring-4 ring-emerald-500/30"
-                  />
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Avatar Image URL</label>
+                {/* Profile Photo Manager */}
+                <div className="p-5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                    {/* Main Avatar Preview with Hover Camera Overlay */}
+                    <div className="relative group cursor-pointer" onClick={() => document.getElementById('profile-photo-upload')?.click()}>
+                      <img
+                        src={avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'user')}`}
+                        alt="Profile Avatar"
+                        className="w-20 h-20 rounded-full object-cover ring-4 ring-emerald-500/30 shadow-md group-hover:opacity-85 transition-opacity"
+                      />
+                      <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 p-1.5 bg-emerald-600 text-white rounded-full shadow-md">
+                        <Camera className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+
+                    {/* Photo Action Buttons */}
+                    <div className="flex-1 space-y-2.5">
+                      <div>
+                        <h3 className="text-xs font-bold text-slate-900 dark:text-white">Profile Photo</h3>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Upload a photo from your computer, choose a preset, or remove your photo.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Hidden File Input */}
+                        <input
+                          type="file"
+                          id="profile-photo-upload"
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+
+                        {/* Upload Button */}
+                        <label
+                          htmlFor="profile-photo-upload"
+                          style={{ backgroundColor: currentThemeConfig.primary }}
+                          className="px-4 py-2 text-white font-bold rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow-sm hover:opacity-90 transition-all"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Upload Photo</span>
+                        </label>
+
+                        {/* Remove Photo Button */}
+                        <button
+                          type="button"
+                          onClick={handleRemovePhoto}
+                          className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-bold rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Remove Photo</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preset Avatars Selection */}
+                  <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2">
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                      Or Choose a Quick Preset Avatar:
+                    </span>
+                    <div className="flex items-center gap-2.5 overflow-x-auto pb-1">
+                      {PRESET_AVATARS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => {
+                            setAvatar(preset.url);
+                            if (currentUser) {
+                              setCurrentUser({ ...currentUser, avatar: preset.url });
+                            }
+                          }}
+                          className={`relative p-0.5 rounded-full border-2 transition-all flex-shrink-0 cursor-pointer ${
+                            avatar === preset.url
+                              ? 'border-emerald-500 ring-2 ring-emerald-500/30 scale-105'
+                              : 'border-transparent hover:border-slate-300 dark:hover:border-slate-700'
+                          }`}
+                          title={preset.name}
+                        >
+                          <img
+                            src={preset.url}
+                            alt={preset.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Direct Image URL input */}
+                  <div className="pt-2">
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                      Or Paste Image Web URL
+                    </label>
                     <input
                       type="text"
                       value={avatar}
                       onChange={(e) => setAvatar(e.target.value)}
                       placeholder="https://images.unsplash.com/..."
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 </div>

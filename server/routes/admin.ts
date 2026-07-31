@@ -19,7 +19,7 @@ const verifyAdmin = (req: any, res: any, next: any) => {
 
 // GET /api/admin/stats
 adminRouter.get('/stats', (req, res) => {
-  const wsCount = (global as any).activeWsClientsCount || 1;
+  const wsCount = (globalThis as any).activeWsClientsCount || 1;
   const stats = db.getAdminStats(wsCount);
   return res.json({ stats });
 });

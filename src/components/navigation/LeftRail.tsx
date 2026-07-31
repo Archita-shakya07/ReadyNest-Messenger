@@ -25,6 +25,7 @@ export const LeftRail: React.FC = () => {
     setAuthModalOpen,
     setThemeModalOpen,
     setActiveConversation,
+    openAiChat,
     setNewGroupModalOpen,
     theme,
     isDarkMode
@@ -39,14 +40,8 @@ export const LeftRail: React.FC = () => {
     return acc + count;
   }, 0);
 
-  // Find AI chat if available
-  const aiChat = conversations.find((c) => c.isAiChat);
-
   const handleAiClick = () => {
-    setViewMode('chat');
-    if (aiChat) {
-      setActiveConversation(aiChat.id);
-    }
+    openAiChat();
   };
 
   return (

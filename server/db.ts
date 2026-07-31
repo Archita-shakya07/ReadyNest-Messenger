@@ -26,45 +26,6 @@ const initialUsers: User[] = [
     isBlocked: false,
     lastSeen: new Date().toISOString(),
     createdAt: new Date().toISOString()
-  },
-  {
-    id: 'user-sarah',
-    name: 'Sarah Jenkins',
-    email: 'sarah@example.com',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    role: 'user',
-    statusMessage: '✨ Product Designer @ NestTech',
-    status: 'online',
-    isBlocked: false,
-    lastSeen: new Date().toISOString(),
-    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-    ipAddress: '192.168.1.102'
-  },
-  {
-    id: 'user-alex',
-    name: 'Alex Rivera',
-    email: 'alex@example.com',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    role: 'user',
-    statusMessage: '💻 Full-Stack Engineer | Building scalable APIs',
-    status: 'online',
-    isBlocked: false,
-    lastSeen: new Date().toISOString(),
-    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    ipAddress: '192.168.1.103'
-  },
-  {
-    id: 'user-priya',
-    name: 'Priya Sharma',
-    email: 'priya@example.com',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-    role: 'user',
-    statusMessage: '🚀 Growth & Operations Lead',
-    status: 'away',
-    isBlocked: false,
-    lastSeen: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    ipAddress: '192.168.1.104'
   }
 ];
 
@@ -79,27 +40,6 @@ const initialConversations: Conversation[] = [
     updatedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     isAiChat: true
-  },
-  {
-    id: 'conv-sarah',
-    isGroup: false,
-    participants: [initialUsers[0], initialUsers[2]], // Admin + Sarah
-    participantIds: ['user-admin', 'user-sarah'],
-    unreadCount: { 'user-admin': 0 },
-    updatedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: 'conv-dev-team',
-    isGroup: true,
-    name: '🚀 ReadyNest Core Devs',
-    avatar: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=150&auto=format&fit=crop&q=80',
-    description: 'Official developer channel for architecture & releases',
-    participants: [initialUsers[0], initialUsers[2], initialUsers[3], initialUsers[4]],
-    participantIds: ['user-admin', 'user-sarah', 'user-alex', 'user-priya'],
-    unreadCount: { 'user-admin': 1 },
-    updatedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
   }
 ];
 
@@ -117,72 +57,6 @@ const initialMessages: Message[] = [
     status: 'seen',
     createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
     isAiResponse: true
-  },
-  // Sarah Conversation
-  {
-    id: 'msg-sarah-1',
-    conversationId: 'conv-sarah',
-    senderId: 'user-sarah',
-    senderName: 'Sarah Jenkins',
-    senderAvatar: initialUsers[2].avatar,
-    content: 'Hey Archit! Did you check out the new dark mode color palette for the desktop view?',
-    type: 'text',
-    status: 'seen',
-    createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString()
-  },
-  {
-    id: 'msg-sarah-2',
-    conversationId: 'conv-sarah',
-    senderId: 'user-admin',
-    senderName: 'Archit Shakya (Admin)',
-    senderAvatar: initialUsers[0].avatar,
-    content: 'Yes! The contrast ratios look crisp and pass WCAG AA standards. Also added WebSockets for sub-100ms message delivery.',
-    type: 'text',
-    status: 'seen',
-    createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString()
-  },
-  {
-    id: 'msg-sarah-3',
-    conversationId: 'conv-sarah',
-    senderId: 'user-sarah',
-    senderName: 'Sarah Jenkins',
-    senderAvatar: initialUsers[2].avatar,
-    content: 'Awesome! Here is the mockup screenshot of the multi-pane desktop workspace:',
-    type: 'image',
-    status: 'seen',
-    attachments: [
-      {
-        id: 'att-1',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-        name: 'desktop_view_mockup.png',
-        size: '1.2 MB'
-      }
-    ],
-    createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString()
-  },
-  // Group Conversation
-  {
-    id: 'msg-group-1',
-    conversationId: 'conv-dev-team',
-    senderId: 'user-alex',
-    senderName: 'Alex Rivera',
-    senderAvatar: initialUsers[3].avatar,
-    content: 'Express REST server & WebSockets state synchronization are live on port 3000! All WebSocket frames are handling typing indicators and read receipts.',
-    type: 'text',
-    status: 'seen',
-    createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString()
-  },
-  {
-    id: 'msg-group-2',
-    conversationId: 'conv-dev-team',
-    senderId: 'user-priya',
-    senderName: 'Priya Sharma',
-    senderAvatar: initialUsers[4].avatar,
-    content: 'Admin panel user management and system broadcasts are also working smoothly. Great work team! 🚀',
-    type: 'text',
-    status: 'delivered',
-    createdAt: new Date(Date.now() - 2 * 60 * 1000).toISOString()
   }
 ];
 
@@ -243,6 +117,26 @@ class MemoryDatabase {
   addUser(user: User): User {
     this.users.push(user);
     this.addAuditLog('USER_REGISTER', user.id, user.name, `New user registered: ${user.email}`);
+
+    // Automatically create 1-on-1 conversations with all existing registered non-AI users
+    this.users.forEach(otherUser => {
+      if (otherUser.id !== user.id && otherUser.id !== 'user-ai') {
+        const convId = `conv-${[user.id, otherUser.id].sort().join('-')}`;
+        const existing = this.conversations.find(c => c.id === convId);
+        if (!existing) {
+          this.conversations.unshift({
+            id: convId,
+            isGroup: false,
+            participants: [user, otherUser],
+            participantIds: [user.id, otherUser.id],
+            unreadCount: { [user.id]: 0, [otherUser.id]: 0 },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+      }
+    });
+
     return user;
   }
 
@@ -265,18 +159,18 @@ class MemoryDatabase {
 
   // Conversation Methods
   getConversationsForUser(userId: string): Conversation[] {
-    if (userId !== 'user-ai') {
+    const currentUser = this.getUserById(userId);
+    if (currentUser && userId !== 'user-ai') {
       let aiConv = this.conversations.find(
         c => (c.isAiChat || c.participantIds.includes('user-ai')) && c.participantIds.includes(userId)
       );
       if (!aiConv) {
-        const user = this.getUserById(userId);
         const aiUser = this.getUserById('user-ai');
-        if (user && aiUser) {
+        if (aiUser) {
           aiConv = {
             id: `conv-ai-${userId}`,
             isGroup: false,
-            participants: [user, aiUser],
+            participants: [currentUser, aiUser],
             participantIds: [userId, 'user-ai'],
             unreadCount: { [userId]: 0, 'user-ai': 0 },
             updatedAt: new Date().toISOString(),
@@ -302,6 +196,27 @@ class MemoryDatabase {
       } else if (!aiConv.isAiChat) {
         aiConv.isAiChat = true;
       }
+
+      // Ensure 1-on-1 conversations exist for all active registered users
+      this.users.forEach(otherUser => {
+        if (otherUser.id !== userId && otherUser.id !== 'user-ai' && !otherUser.isBlocked) {
+          const convId = `conv-${[userId, otherUser.id].sort().join('-')}`;
+          const existing = this.conversations.find(
+            c => c.id === convId || (!c.isGroup && c.participantIds.includes(userId) && c.participantIds.includes(otherUser.id))
+          );
+          if (!existing) {
+            this.conversations.push({
+              id: convId,
+              isGroup: false,
+              participants: [currentUser, otherUser],
+              participantIds: [userId, otherUser.id],
+              unreadCount: { [userId]: 0, [otherUser.id]: 0 },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
+          }
+        }
+      });
     }
     return this.conversations.filter(c => c.participantIds.includes(userId));
   }

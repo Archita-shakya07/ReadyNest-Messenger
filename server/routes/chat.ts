@@ -4,6 +4,12 @@ import { Message, Conversation, Attachment } from '../../src/types/index.js';
 
 export const chatRouter = Router();
 
+// GET /api/chat/users - Get all active registered users
+chatRouter.get('/users', (req, res) => {
+  const users = db.getUsers().filter(u => !u.isBlocked && u.id !== 'user-ai');
+  return res.json({ users });
+});
+
 // GET /api/chat/conversations/:userId - Get all user conversations
 chatRouter.get('/conversations/:userId', (req, res) => {
   const { userId } = req.params;
