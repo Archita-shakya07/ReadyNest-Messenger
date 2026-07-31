@@ -2,7 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { Server } from 'http';
 import { db } from './db.js';
 import { Message, SystemBroadcast } from '../src/types/index.js';
-import { getAiClient, generateSmartAiReply } from './aiHelper.js';
+import { getAiClient, generateSmartAiReply, generateGeminiResponse } from './aiHelper.js';
 
 interface ExtendedWebSocket extends WebSocket {
   userId?: string;
@@ -143,38 +143,7 @@ export function initWebSocketServer(server: Server) {
 
                 // Generate response asynchronously with sub-50ms kickoff
                 setTimeout(async () => {
-                  let replyText = '';
-                  const aiClient = getAiClient();
-                  const systemInstruction = `You are 'ReadyNest AI Assistant', an intelligent, helpful, and friendly AI chatbot integrated inside the Ready Nest Messenger platform built by Archit Shakya.
-Always provide complete, thorough, and direct answers to user questions. Never output placeholder or generic non-answers.
-When asked for questions, code, study topics, summaries, or explanations, provide them in full detail formatted cleanly with markdown, emojis, code blocks, and clear lists.`;
-
-                  if (aiClient) {
-                    try {
-                      const response = await aiClient.models.generateContent({
-                        model: 'gemini-3.6-flash',
-                        contents: content || 'Hello AI',
-                        config: { systemInstruction },
-                      });
-                      replyText = response.text || '';
-                    } catch (genErr1: any) {
-                      console.warn('Gemini 3.6 Flash call failed in WebSocket, trying gemini-flash-latest:', genErr1?.message || genErr1);
-                      try {
-                        const response2 = await aiClient.models.generateContent({
-                          model: 'gemini-flash-latest',
-                          contents: content || 'Hello AI',
-                          config: { systemInstruction },
-                        });
-                        replyText = response2.text || '';
-                      } catch (genErr2: any) {
-                        console.warn('Gemini fallback failed in WebSocket:', genErr2?.message || genErr2);
-                      }
-                    }
-                  }
-
-                  if (!replyText || replyText.trim().length === 0) {
-                    replyText = generateSmartAiReply(content || '');
-                  }
+                  const replyText = await generateGeminiResponse(content || 'Hello AI');
 
                   // Stop typing
                   broadcastToAll({
@@ -254,6 +223,71 @@ When asked for questions, code, study topics, summaries, or explanations, provid
                   });
                 });
               }
+            }
+            break;
+          }
+
+          case 'user:update_profile': {
+            const { userId, name, avatar, statusMessage, status } = payload;
+            if (userId) {
+              const updated = db.updateUser(userId, { name, avatar, statusMessage, status });
+              if (updated) {
+                broadcastToAll({
+                  event: 'user:profile_updated',
+                  payload: { user: updated }
+                });
+              }
+            }
+            break;
+          }
+
+          case 'call:start': {
+            const { callId, caller, receiverId, type, conversationId } = payload;
+            if (receiverId) {
+              // Forward incoming call event to receiver socket
+              broadcastToUser(receiverId, {
+                event: 'call:incoming',
+                payload: { callId, caller, receiverId, type, conversationId }
+              });
+            }
+            break;
+          }
+
+          case 'call:accept': {
+            const { callId, callerId, receiverId, type } = payload;
+            if (callerId) {
+              broadcastToUser(callerId, {
+                event: 'call:accepted',
+                payload: { callId, receiverId, type }
+              });
+            }
+            break;
+          }
+
+          case 'call:decline': {
+            const { callId, callerId, receiverId } = payload;
+            if (callerId) {
+              broadcastToUser(callerId, {
+                event: 'call:declined',
+                payload: { callId, receiverId }
+              });
+            }
+            break;
+          }
+
+          case 'call:end': {
+            const { callId, callerId, receiverId } = payload;
+            if (callerId) {
+              broadcastToUser(callerId, {
+                event: 'call:ended',
+                payload: { callId }
+              });
+            }
+            if (receiverId) {
+              broadcastToUser(receiverId, {
+                event: 'call:ended',
+                payload: { callId }
+              });
             }
             break;
           }

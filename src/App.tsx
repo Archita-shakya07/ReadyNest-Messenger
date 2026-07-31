@@ -19,6 +19,7 @@ import { GroupModal } from './components/chat/GroupModal';
 import { NewChatModal } from './components/chat/NewChatModal';
 import { MobileBottomNav } from './components/navigation/MobileBottomNav';
 import { VoiceVideoCallModal } from './components/chat/VoiceVideoCallModal';
+import { IncomingCallOverlay } from './components/chat/IncomingCallOverlay';
 import { SystemBroadcastBanner } from './components/ui/SystemBroadcastBanner';
 import { MediaPreviewModal } from './components/ui/MediaPreviewModal';
 import { ThemeModal } from './components/ui/ThemeModal';
@@ -27,7 +28,6 @@ import { LandingPage } from './components/landing/LandingPage';
 export default function App() {
   const {
     currentUser,
-    setCurrentUser,
     authPageMode,
     viewMode,
     initSocketListeners,
@@ -48,19 +48,6 @@ export default function App() {
   }, [isDarkMode]);
 
   useEffect(() => {
-    // Auto login from localStorage if available
-    const savedUser = localStorage.getItem('readynest_user');
-    const savedToken = localStorage.getItem('readynest_token');
-
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        setCurrentUser(user, savedToken || undefined);
-      } catch (e) {
-        // If saved user invalid, stay on landing page
-      }
-    }
-
     // Listen to real-time socket events
     initSocketListeners();
   }, []);
@@ -127,6 +114,7 @@ export default function App() {
       <GroupModal />
       <NewChatModal />
       <VoiceVideoCallModal />
+      <IncomingCallOverlay />
       <StoryViewerModal />
       <MediaPreviewModal />
       <ThemeModal />

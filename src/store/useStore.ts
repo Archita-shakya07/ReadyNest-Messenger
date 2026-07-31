@@ -1,10 +1,25 @@
 import { create } from 'zustand';
-import { User, Conversation, Message, SystemBroadcast, Attachment, CallLog, UserStatusStory, StoryItem } from '../types';
+import { User, UserStatus, Conversation, Message, SystemBroadcast, Attachment, CallLog, UserStatusStory, StoryItem } from '../types';
 import { ThemeId, THEMES } from '../types/theme';
 import { api } from '../services/api';
 import { socketService } from '../services/socketService';
 
 export type ViewMode = 'chat' | 'calls' | 'status' | 'admin' | 'specs' | 'settings';
+
+export interface CallSession {
+  callId?: string;
+  type: 'voice' | 'video';
+  user: User;
+  status: 'outgoing' | 'connected' | 'ended';
+  conversationId?: string;
+}
+
+export interface IncomingCallSession {
+  callId: string;
+  type: 'voice' | 'video';
+  caller: User;
+  conversationId?: string;
+}
 
 interface AppState {
   // Auth
@@ -15,6 +30,7 @@ interface AppState {
   isAuthModalOpen: boolean;
   setAuthModalOpen: (open: boolean) => void;
   setCurrentUser: (user: User | null, token?: string) => void;
+  updateProfile: (updates: { name?: string; avatar?: string; statusMessage?: string; status?: UserStatus }) => Promise<void>;
   logout: () => void;
 
   // Theme & Navigation
@@ -61,8 +77,13 @@ interface AppState {
   // Real-time State
   typingUsers: Record<string, string>; // `${conversationId}` -> string of typing names
   onlineUsers: Record<string, string>;
-  activeCallModal: { type: 'voice' | 'video'; user: User } | null;
-  setActiveCallModal: (call: { type: 'voice' | 'video'; user: User } | null) => void;
+  activeCallModal: CallSession | null;
+  incomingCall: IncomingCallSession | null;
+  setActiveCallModal: (call: CallSession | null) => void;
+  startCall: (type: 'voice' | 'video', targetUser: User, conversationId?: string) => void;
+  acceptIncomingCall: () => void;
+  rejectIncomingCall: () => void;
+  endActiveCall: () => void;
   previewMedia: Attachment | null;
   setPreviewMedia: (media: Attachment | null) => void;
   isNewGroupModalOpen: boolean;
@@ -102,6 +123,59 @@ export const useStore = create<AppState>((set, get) => ({
       socketService.connect(user.id);
       get().loadConversations();
       get().loadBroadcasts();
+    }
+  },
+
+  updateProfile: async (updates) => {
+    const { currentUser } = get();
+    if (!currentUser) return;
+
+    const updatedUser = { ...currentUser, ...updates };
+    set({ currentUser: updatedUser });
+    localStorage.setItem('readynest_user', JSON.stringify(updatedUser));
+
+    // Optimistically update conversations and messages in state
+    set((s) => ({
+      conversations: s.conversations.map((c) => ({
+        ...c,
+        participants: c.participants.map((p) =>
+          p.id === currentUser.id ? { ...p, ...updates } : p
+        ),
+      })),
+      messages: s.messages.map((m) =>
+        m.senderId === currentUser.id
+          ? {
+              ...m,
+              senderAvatar: updates.avatar || m.senderAvatar,
+              senderName: updates.name || m.senderName,
+            }
+          : m
+      ),
+      statusStories: s.statusStories.map((st) =>
+        st.userId === currentUser.id
+          ? {
+              ...st,
+              userName: updates.name || st.userName,
+              userAvatar: updates.avatar || st.userAvatar,
+            }
+          : st
+      ),
+    }));
+
+    try {
+      await api.updateProfile({
+        userId: currentUser.id,
+        ...updates,
+      });
+    } catch (e) {
+      console.warn('REST updateProfile error:', e);
+    }
+
+    if (socketService.getIsConnected()) {
+      socketService.send('user:update_profile', {
+        userId: currentUser.id,
+        ...updates,
+      });
     }
   },
 
@@ -367,7 +441,112 @@ export const useStore = create<AppState>((set, get) => ({
   typingUsers: {},
   onlineUsers: {},
   activeCallModal: null,
+  incomingCall: null,
   setActiveCallModal: (call) => set({ activeCallModal: call }),
+
+  startCall: (type, targetUser, conversationId) => {
+    const { currentUser } = get();
+    if (!currentUser) return;
+
+    const callId = `call-${Date.now()}`;
+    const isAi = targetUser.id === 'user-ai' || targetUser.role === 'admin' && targetUser.email === 'ai@readynest.app';
+
+    const newSession: CallSession = {
+      callId,
+      type,
+      user: targetUser,
+      status: isAi ? 'connected' : 'outgoing',
+      conversationId
+    };
+
+    set({ activeCallModal: newSession });
+
+    socketService.send('call:start', {
+      callId,
+      caller: currentUser,
+      receiverId: targetUser.id,
+      type,
+      conversationId
+    });
+
+    get().addCallLog({
+      user: targetUser,
+      type,
+      direction: 'outgoing',
+      duration: isAi ? '00:01' : 'Ringing...'
+    });
+
+    if (isAi) {
+      setTimeout(() => {
+        set((s) => s.activeCallModal ? { activeCallModal: { ...s.activeCallModal, status: 'connected' } } : {});
+      }, 800);
+    }
+  },
+
+  acceptIncomingCall: () => {
+    const { incomingCall, currentUser } = get();
+    if (!incomingCall) return;
+
+    const activeSession: CallSession = {
+      callId: incomingCall.callId,
+      type: incomingCall.type,
+      user: incomingCall.caller,
+      status: 'connected',
+      conversationId: incomingCall.conversationId
+    };
+
+    set({
+      incomingCall: null,
+      activeCallModal: activeSession
+    });
+
+    socketService.send('call:accept', {
+      callId: incomingCall.callId,
+      callerId: incomingCall.caller.id,
+      receiverId: currentUser?.id,
+      type: incomingCall.type
+    });
+
+    get().addCallLog({
+      user: incomingCall.caller,
+      type: incomingCall.type,
+      direction: 'incoming',
+      duration: '00:01'
+    });
+  },
+
+  rejectIncomingCall: () => {
+    const { incomingCall, currentUser } = get();
+    if (!incomingCall) return;
+
+    socketService.send('call:decline', {
+      callId: incomingCall.callId,
+      callerId: incomingCall.caller.id,
+      receiverId: currentUser?.id
+    });
+
+    get().addCallLog({
+      user: incomingCall.caller,
+      type: incomingCall.type,
+      direction: 'missed',
+      duration: '00:00'
+    });
+
+    set({ incomingCall: null });
+  },
+
+  endActiveCall: () => {
+    const { activeCallModal, currentUser } = get();
+    if (!activeCallModal) return;
+
+    socketService.send('call:end', {
+      callId: activeCallModal.callId,
+      callerId: currentUser?.id,
+      receiverId: activeCallModal.user.id
+    });
+
+    set({ activeCallModal: null });
+  },
   previewMedia: null,
   setPreviewMedia: (media) => set({ previewMedia: media }),
   isNewGroupModalOpen: false,
@@ -474,9 +653,105 @@ export const useStore = create<AppState>((set, get) => ({
           break;
         }
 
+        case 'user:profile_updated': {
+          const { user: updatedUser } = payload;
+          if (updatedUser && updatedUser.id) {
+            set((s) => {
+              const isSelf = s.currentUser?.id === updatedUser.id;
+              const nextUser = isSelf ? { ...s.currentUser, ...updatedUser } : s.currentUser;
+              if (isSelf && nextUser) {
+                localStorage.setItem('readynest_user', JSON.stringify(nextUser));
+              }
+
+              return {
+                currentUser: nextUser,
+                conversations: s.conversations.map((c) => ({
+                  ...c,
+                  participants: c.participants.map((p) =>
+                    p.id === updatedUser.id ? { ...p, ...updatedUser } : p
+                  ),
+                })),
+                messages: s.messages.map((m) =>
+                  m.senderId === updatedUser.id
+                    ? {
+                        ...m,
+                        senderAvatar: updatedUser.avatar || m.senderAvatar,
+                        senderName: updatedUser.name || m.senderName,
+                      }
+                    : m
+                ),
+                statusStories: s.statusStories.map((st) =>
+                  st.userId === updatedUser.id
+                    ? {
+                        ...st,
+                        userName: updatedUser.name || st.userName,
+                        userAvatar: updatedUser.avatar || st.userAvatar,
+                      }
+                    : st
+                ),
+              };
+            });
+          }
+          break;
+        }
+
         case 'broadcast:system': {
           set({ activeBroadcastBanner: payload });
           get().loadBroadcasts();
+          break;
+        }
+
+        case 'call:incoming': {
+          const { callId, caller, receiverId, type, conversationId } = payload;
+          if (get().currentUser?.id === receiverId) {
+            set({
+              incomingCall: {
+                callId,
+                type,
+                caller,
+                conversationId
+              }
+            });
+          }
+          break;
+        }
+
+        case 'call:accepted': {
+          const { callId } = payload;
+          set((s) => {
+            if (s.activeCallModal && (s.activeCallModal.callId === callId || s.activeCallModal.status === 'outgoing')) {
+              return {
+                activeCallModal: {
+                  ...s.activeCallModal,
+                  status: 'connected'
+                }
+              };
+            }
+            return {};
+          });
+          break;
+        }
+
+        case 'call:declined': {
+          set((s) => {
+            if (s.activeCallModal) {
+              return {
+                activeCallModal: {
+                  ...s.activeCallModal,
+                  status: 'ended'
+                }
+              };
+            }
+            return {};
+          });
+          setTimeout(() => {
+            set({ activeCallModal: null });
+          }, 1500);
+          break;
+        }
+
+        case 'call:ended': {
+          set({ activeCallModal: null, incomingCall: null });
           break;
         }
       }

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { THEMES } from '../../types/theme';
+import { User } from '../../types';
 import { MessageItem } from './MessageItem';
 import { MessageInput } from './MessageInput';
 import { api } from '../../services/api';
@@ -26,7 +27,7 @@ export const ChatWindow: React.FC = () => {
     typingUsers,
     isInfoDrawerOpen,
     setInfoDrawerOpen,
-    setActiveCallModal,
+    startCall,
     theme
   } = useStore();
 
@@ -169,30 +170,50 @@ export const ChatWindow: React.FC = () => {
             <span className="hidden md:inline">{isSummarizing ? 'Summarizing...' : 'Summarize'}</span>
           </button>
 
-          {/* Voice & Video Call Controls (Simulated) */}
-          {!activeConv.isAiChat && (
+          {/* Voice & Video Call Controls */}
+          {(!activeConv.isGroup || activeConv.isAiChat) && (
             <>
               <button
-                onClick={() =>
-                  setActiveCallModal({
-                    type: 'voice',
-                    user: otherUser || currentUser!,
-                  })
-                }
-                className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                onClick={() => {
+                  const targetUser: User = activeConv.isAiChat
+                    ? {
+                        id: 'user-ai',
+                        name: 'ReadyNest AI Assistant',
+                        email: 'ai@readynest.app',
+                        avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',
+                        role: 'admin',
+                        status: 'online',
+                        isBlocked: false,
+                        lastSeen: 'Online',
+                        createdAt: '2026-01-01'
+                      }
+                    : otherUser || currentUser!;
+                  startCall('voice', targetUser, activeConv.id);
+                }}
+                className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 title="Start Voice Call"
               >
                 <Phone className="w-4 h-4" />
               </button>
 
               <button
-                onClick={() =>
-                  setActiveCallModal({
-                    type: 'video',
-                    user: otherUser || currentUser!,
-                  })
-                }
-                className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                onClick={() => {
+                  const targetUser: User = activeConv.isAiChat
+                    ? {
+                        id: 'user-ai',
+                        name: 'ReadyNest AI Assistant',
+                        email: 'ai@readynest.app',
+                        avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',
+                        role: 'admin',
+                        status: 'online',
+                        isBlocked: false,
+                        lastSeen: 'Online',
+                        createdAt: '2026-01-01'
+                      }
+                    : otherUser || currentUser!;
+                  startCall('video', targetUser, activeConv.id);
+                }}
+                className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 title="Start Video Call"
               >
                 <Video className="w-4 h-4" />

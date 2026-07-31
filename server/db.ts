@@ -144,7 +144,22 @@ class MemoryDatabase {
     const index = this.users.findIndex(u => u.id === id);
     if (index !== -1) {
       this.users[index] = { ...this.users[index], ...updates };
-      return this.users[index];
+      const updatedUser = this.users[index];
+
+      // Update all conversations containing this user in participants
+      this.conversations.forEach(c => {
+        c.participants = c.participants.map(p => p.id === id ? { ...p, ...updates } : p);
+      });
+
+      // Update messages sent by this user
+      this.messages.forEach(m => {
+        if (m.senderId === id) {
+          if (updates.avatar) m.senderAvatar = updates.avatar;
+          if (updates.name) m.senderName = updates.name;
+        }
+      });
+
+      return updatedUser;
     }
     return undefined;
   }

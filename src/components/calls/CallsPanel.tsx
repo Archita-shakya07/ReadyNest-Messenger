@@ -22,9 +22,8 @@ import {
 export const CallsPanel: React.FC = () => {
   const {
     callLogs,
-    addCallLog,
     clearCallLogs,
-    setActiveCallModal,
+    startCall,
     conversations,
     setActiveConversation,
     setViewMode,
@@ -51,13 +50,7 @@ export const CallsPanel: React.FC = () => {
   });
 
   const handleStartCall = (targetUser: User, type: 'voice' | 'video') => {
-    addCallLog({
-      user: targetUser,
-      type,
-      direction: 'outgoing',
-      duration: 'In progress...'
-    });
-    setActiveCallModal({ type, user: targetUser });
+    startCall(type, targetUser);
   };
 
   const handleOpenChat = (targetUserId: string) => {

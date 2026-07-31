@@ -85,17 +85,9 @@ authRouter.post('/signup', (req, res) => {
       isAiChat: true
     });
   }
+
   const token = generateToken(newUser.id);
-
-// Broadcast new user to all connected clients
-if (typeof (global as any).broadcastToAllSockets === 'function') {
-  (global as any).broadcastToAllSockets({
-    event: 'user:new',
-    payload: { user: newUser }
-  });
-}
-
-return res.status(201).json({ token, user: newUser });
+  return res.status(201).json({ token, user: newUser });
 });
 
 // GET /api/auth/me
@@ -129,6 +121,14 @@ authRouter.put('/profile', (req, res) => {
   const updated = db.updateUser(userId, { name, avatar, statusMessage, status });
   if (!updated) {
     return res.status(404).json({ error: 'User not found' });
+  }
+
+  // Broadcast updated user profile to all connected clients
+  if (typeof (globalThis as any).broadcastToAllSockets === 'function') {
+    (globalThis as any).broadcastToAllSockets({
+      event: 'user:profile_updated',
+      payload: { user: updated }
+    });
   }
 
   return res.json({ user: updated });

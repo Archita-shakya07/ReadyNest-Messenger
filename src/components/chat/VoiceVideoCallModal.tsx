@@ -6,21 +6,20 @@ import {
   MicOff,
   Video as VideoIcon,
   VideoOff,
-  Volume2,
-  Maximize2,
   ShieldCheck,
-  Radio
+  Radio,
+  PhoneCall
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const VoiceVideoCallModal: React.FC = () => {
-  const { activeCallModal, setActiveCallModal } = useStore();
+  const { activeCallModal, endActiveCall } = useStore();
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
 
   useEffect(() => {
-    if (activeCallModal) {
+    if (activeCallModal && activeCallModal.status === 'connected') {
       const timer = setInterval(() => {
         setCallDuration((s) => s + 1);
       }, 1000);
@@ -32,7 +31,7 @@ export const VoiceVideoCallModal: React.FC = () => {
 
   if (!activeCallModal) return null;
 
-  const { type, user } = activeCallModal;
+  const { type, user, status } = activeCallModal;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -41,7 +40,7 @@ export const VoiceVideoCallModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-lg flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-lg flex items-center justify-center p-4 select-none">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -50,19 +49,19 @@ export const VoiceVideoCallModal: React.FC = () => {
         {/* Header Status */}
         <div className="p-4 bg-slate-950/60 border-b border-slate-800 flex items-center justify-between z-10">
           <div className="flex items-center gap-2">
-            <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
+            <Radio className={`w-4 h-4 ${status === 'connected' ? 'text-emerald-400 animate-pulse' : 'text-amber-400 animate-spin'}`} />
             <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">
-              ReadyNest Encrypted {type === 'video' ? 'Video Call' : 'Voice Call'}
+              ReadyNest {type === 'video' ? 'Video Call' : 'Voice Call'}
             </span>
           </div>
           <span className="text-xs font-mono font-medium text-slate-300">
-            {formatTime(callDuration)}
+            {status === 'outgoing' ? 'Ringing...' : status === 'ended' ? 'Ended' : formatTime(callDuration)}
           </span>
         </div>
 
         {/* Main Call Stage */}
         <div className="relative min-h-[380px] bg-slate-950 flex flex-col items-center justify-center p-8 overflow-hidden">
-          {type === 'video' && !isVideoOff ? (
+          {type === 'video' && !isVideoOff && status === 'connected' ? (
             <div className="absolute inset-0 bg-slate-900">
               <img
                 src={user.avatar}
@@ -79,14 +78,37 @@ export const VoiceVideoCallModal: React.FC = () => {
               <img
                 src={user.avatar}
                 alt={user.name}
-                className="w-28 h-28 rounded-full object-cover border-4 border-emerald-500/40 shadow-2xl"
+                className={`w-28 h-28 rounded-full object-cover border-4 ${
+                  status === 'connected'
+                    ? 'border-emerald-500/80 shadow-2xl'
+                    : status === 'ended'
+                    ? 'border-rose-500/80'
+                    : 'border-amber-500/80'
+                }`}
               />
-              <div className="absolute -inset-2 rounded-full border border-emerald-500/30 animate-ping pointer-events-none"></div>
+              {status === 'outgoing' && (
+                <div className="absolute -inset-3 rounded-full border-2 border-amber-400/50 animate-ping pointer-events-none"></div>
+              )}
+              {status === 'connected' && (
+                <div className="absolute -inset-2 rounded-full border border-emerald-500/30 animate-pulse pointer-events-none"></div>
+              )}
             </div>
+
             <h3 className="text-xl font-bold text-white drop-shadow-md">{user.name}</h3>
-            <p className="text-xs text-emerald-400 font-medium mt-1 drop-shadow flex items-center gap-1 justify-center">
-              <ShieldCheck className="w-3.5 h-3.5" /> 256-Bit Encrypted HD Stream
-            </p>
+
+            <div className="mt-2 flex items-center justify-center gap-1.5 text-xs font-medium">
+              {status === 'outgoing' ? (
+                <span className="text-amber-400 flex items-center gap-1">
+                  <PhoneCall className="w-3.5 h-3.5 animate-bounce" /> Calling... Waiting for answer
+                </span>
+              ) : status === 'ended' ? (
+                <span className="text-rose-400">Call Ended / Declined</span>
+              ) : (
+                <span className="text-emerald-400 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5" /> 256-Bit Encrypted Stream Connected
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -94,7 +116,7 @@ export const VoiceVideoCallModal: React.FC = () => {
         <div className="p-6 bg-slate-950 border-t border-slate-800 flex items-center justify-center gap-4 z-10">
           <button
             onClick={() => setIsMuted(!isMuted)}
-            className={`p-3.5 rounded-2xl border transition-all ${
+            className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               isMuted
                 ? 'bg-rose-600 border-rose-500 text-white'
                 : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700'
@@ -106,7 +128,7 @@ export const VoiceVideoCallModal: React.FC = () => {
           {type === 'video' && (
             <button
               onClick={() => setIsVideoOff(!isVideoOff)}
-              className={`p-3.5 rounded-2xl border transition-all ${
+              className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
                 isVideoOff
                   ? 'bg-rose-600 border-rose-500 text-white'
                   : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700'
@@ -117,8 +139,8 @@ export const VoiceVideoCallModal: React.FC = () => {
           )}
 
           <button
-            onClick={() => setActiveCallModal(null)}
-            className="px-6 py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-2xl transition-all shadow-xl shadow-rose-950/50 flex items-center gap-2"
+            onClick={endActiveCall}
+            className="px-6 py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-2xl transition-all shadow-xl shadow-rose-950/50 flex items-center gap-2 cursor-pointer"
           >
             <PhoneOff className="w-5 h-5" />
             <span>End Call</span>

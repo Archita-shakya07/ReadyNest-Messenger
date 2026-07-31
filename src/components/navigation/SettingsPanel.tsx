@@ -48,6 +48,7 @@ export const SettingsPanel: React.FC = () => {
     toggleDarkMode,
     currentUser,
     setCurrentUser,
+    updateProfile,
     logout
   } = useStore();
 
@@ -97,12 +98,17 @@ export const SettingsPanel: React.FC = () => {
   const currentThemeConfig = THEMES[theme] || THEMES.cloud;
 
   const PRESET_AVATARS = [
-    { id: '1', name: 'Aanya', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80' },
-    { id: '2', name: 'Rohan', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80' },
-    { id: '3', name: 'Priya', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80' },
-    { id: '4', name: 'Alex', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80' },
-    { id: '5', name: 'Vector 3D', url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'user')}` },
-    { id: '6', name: 'Bot/Cyber', url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name || 'bot')}` }
+    { id: '1', name: 'Adventurer', url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=b6e3f4' },
+    { id: '2', name: 'Aesthetic Micah', url: 'https://api.dicebear.com/7.x/micah/svg?seed=Nala&backgroundColor=ffdfbf' },
+    { id: '3', name: 'Lorelei Cartoon', url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Avery&backgroundColor=c0aede' },
+    { id: '4', name: 'Notionist', url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Milo&backgroundColor=ffd5dc' },
+    { id: '5', name: 'Big Smile', url: 'https://api.dicebear.com/7.x/big-smile/svg?seed=Leo&backgroundColor=d1d4f9' },
+    { id: '6', name: 'Open Peeps', url: 'https://api.dicebear.com/7.x/open-peeps/svg?seed=Shadow&backgroundColor=c0aede' },
+    { id: '7', name: 'Gentle Girl', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya&top=longHair&facialHairProbability=0' },
+    { id: '8', name: 'Decent Boy', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav&top=shortHair&facialHairProbability=0' },
+    { id: '9', name: 'Cyber Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=CyberSpark&backgroundColor=b6e3f4' },
+    { id: '10', name: 'Fun Emoji', url: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Joy&backgroundColor=ffd5dc' },
+    { id: '11', name: 'Personas Art', url: 'https://api.dicebear.com/7.x/personas/svg?seed=Creative&backgroundColor=d1d4f9' }
   ];
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,9 +122,7 @@ export const SettingsPanel: React.FC = () => {
       reader.onloadend = () => {
         const result = reader.result as string;
         setAvatar(result);
-        if (currentUser) {
-          setCurrentUser({ ...currentUser, avatar: result });
-        }
+        updateProfile({ avatar: result });
       };
       reader.readAsDataURL(file);
     }
@@ -127,21 +131,17 @@ export const SettingsPanel: React.FC = () => {
   const handleRemovePhoto = () => {
     const defaultAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'user')}`;
     setAvatar(defaultAvatar);
-    if (currentUser) {
-      setCurrentUser({ ...currentUser, avatar: defaultAvatar });
-    }
+    updateProfile({ avatar: defaultAvatar });
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (currentUser) {
-      const updated = {
-        ...currentUser,
+      await updateProfile({
         name: name.trim() || currentUser.name,
         statusMessage: statusMsg.trim() || currentUser.statusMessage,
         avatar: avatar.trim() || currentUser.avatar
-      };
-      setCurrentUser(updated);
+      });
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 2500);
     }
@@ -407,9 +407,7 @@ export const SettingsPanel: React.FC = () => {
                           type="button"
                           onClick={() => {
                             setAvatar(preset.url);
-                            if (currentUser) {
-                              setCurrentUser({ ...currentUser, avatar: preset.url });
-                            }
+                            updateProfile({ avatar: preset.url });
                           }}
                           className={`relative p-0.5 rounded-full border-2 transition-all flex-shrink-0 cursor-pointer ${
                             avatar === preset.url
